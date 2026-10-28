@@ -15,6 +15,14 @@ Windows Task Manager as a to-do app
 
 </div>
 
+<div align="center"><a href="https://github.com/coignard/taskmgr">
+  <picture>
+    <source srcset="https://github.com/coignard/taskmgr/blob/main/assets/taskmgr.png?raw=true">
+    <img src="assets/icon.png" alt="Task Manager" width="384">
+  </picture>
+</a>
+</div>
+
 ## Install
 
 ```bash
