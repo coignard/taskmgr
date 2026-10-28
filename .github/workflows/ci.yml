@@ -1,0 +1,118 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'crates/**'
+      - 'xtask/**'
+      - '.cargo/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'codecov.yml'
+      - 'deny.toml'
+      - 'rust-toolchain.toml'
+      - 'rustfmt.toml'
+      - '.github/workflows/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'crates/**'
+      - 'xtask/**'
+      - '.cargo/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'codecov.yml'
+      - 'deny.toml'
+      - 'rust-toolchain.toml'
+      - 'rustfmt.toml'
+      - '.github/workflows/**'
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    name: Test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            packages: --workspace --exclude taskmgr-macos
+          - os: windows-latest
+            packages: --workspace --exclude taskmgr-macos
+          - os: macos-latest
+            packages: --workspace
+    steps:
+    - uses: actions/checkout@v7
+    - uses: dtolnay/rust-toolchain@stable
+    - name: Run tests
+      run: cargo test ${{ matrix.packages }} --locked --verbose
+    - name: Bundle Task Manager.app
+      if: runner.os == 'macOS'
+      run: cargo xtask bundle
+
+  msrv:
+    name: MSRV
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+    - uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: 1.99.0
+        targets: aarch64-apple-darwin
+    - name: Check the minimum supported Rust version
+      run: cargo +1.99.0 check --workspace --all-targets --target aarch64-apple-darwin
+
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+    - uses: dtolnay/rust-toolchain@stable
+      with:
+        components: clippy
+        targets: aarch64-apple-darwin
+    - name: Run clippy for macOS
+      run: cargo clippy --workspace --all-targets --all-features --target aarch64-apple-darwin -- -D warnings
+    - name: Run clippy for Linux
+      run: cargo clippy --workspace --exclude taskmgr-macos --all-targets --all-features -- -D warnings
+
+  fmt:
+    name: Format
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+    - uses: dtolnay/rust-toolchain@stable
+      with:
+        components: rustfmt
+    - name: Check formatting
+      run: cargo fmt --all -- --check
+
+  deny:
+    name: Deny
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+    - uses: EmbarkStudios/cargo-deny-action@v2
+
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+    - uses: dtolnay/rust-toolchain@stable
+    - name: Install cargo-llvm-cov
+      uses: taiki-e/install-action@cargo-llvm-cov
+    - name: Generate coverage
+      run: cargo llvm-cov --all-features --workspace --exclude taskmgr-macos --codecov --output-path codecov.json
+    - name: Upload to Codecov
+      uses: codecov/codecov-action@v7
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: codecov.json
+        fail_ci_if_error: true

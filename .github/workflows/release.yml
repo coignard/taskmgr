@@ -1,0 +1,76 @@
+name: Release
+
+permissions:
+  contents: read
+
+on:
+  push:
+    tags:
+      - '[0-9]+.*'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Check that the tag matches the version
+        run: |
+          version=$(cargo metadata --format-version 1 --no-deps \
+            | jq -r '.packages[] | select(.name == "taskmgr-macos") | .version')
+          if [ "$GITHUB_REF_NAME" != "$version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match version $version"
+            exit 1
+          fi
+      - name: Run tests
+        run: cargo test --workspace --locked
+
+  create-release:
+    needs: check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: taiki-e/create-gh-release-action@v1
+        with:
+          changelog: CHANGELOG.md
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  upload-assets:
+    needs: create-release
+    runs-on: macos-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin, x86_64-apple-darwin
+      - name: Bundle Task Manager.app
+        id: bundle
+        run: |
+          app=$(cargo xtask bundle --universal)
+          echo "app=$app" >> "$GITHUB_OUTPUT"
+      - name: Archive Task Manager.app
+        id: archive
+        run: |
+          archive="Task-Manager-${GITHUB_REF_NAME}-universal-apple-darwin.zip"
+          ditto -c -k --keepParent "$APP" "$archive"
+          shasum -a 256 "$archive" > "$archive.sha256"
+          echo "path=$archive" >> "$GITHUB_OUTPUT"
+        env:
+          APP: ${{ steps.bundle.outputs.app }}
+      - name: Upload Task Manager.app
+        run: gh release upload "$GITHUB_REF_NAME" "$ARCHIVE" "$ARCHIVE.sha256"
+        env:
+          ARCHIVE: ${{ steps.archive.outputs.path }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/attest@v4
+        with:
+          subject-path: ${{ steps.archive.outputs.path }}

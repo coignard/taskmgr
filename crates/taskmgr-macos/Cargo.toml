@@ -1,0 +1,70 @@
+[package]
+name = "taskmgr-macos"
+description = "Task Manager on the macOS desktop"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+jiff.workspace = true
+objc2.workspace = true
+objc2-app-kit = { workspace = true, features = [
+    "std",
+    "NSApplication",
+    "NSColor",
+    "NSCursor",
+    "NSEvent",
+    "NSGraphics",
+    "NSMenu",
+    "NSMenuItem",
+    "NSPanel",
+    "NSPasteboard",
+    "NSResponder",
+    "NSRunningApplication",
+    "NSScreen",
+    "NSSound",
+    "NSTrackingArea",
+    "NSView",
+    "NSWindow",
+    "objc2-core-foundation",
+    "objc2-quartz-core",
+] }
+objc2-core-foundation = { workspace = true, features = ["std", "CFCGTypes", "CFData"] }
+objc2-core-graphics = { workspace = true, features = [
+    "std",
+    "CGColorSpace",
+    "CGDataProvider",
+    "CGImage",
+] }
+objc2-foundation = { workspace = true, features = [
+    "std",
+    "NSArray",
+    "NSData",
+    "NSDate",
+    "NSEnumerator",
+    "NSFileManager",
+    "NSGeometry",
+    "NSNotification",
+    "NSObjCRuntime",
+    "NSObject",
+    "NSPathUtilities",
+    "NSProcessInfo",
+    "NSRunLoop",
+    "NSString",
+    "NSTimer",
+    "NSURL",
+] }
+objc2-quartz-core = { workspace = true, features = [
+    "std",
+    "CALayer",
+    "CATransaction",
+    "objc2-core-foundation",
+] }
+taskmgr.workspace = true
+
+[lints]
+workspace = true

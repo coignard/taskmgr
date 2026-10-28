@@ -1,0 +1,23 @@
+[package]
+name = "xtask"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+cargo_metadata.workspace = true
+clap.workspace = true
+icns.workspace = true
+plist.workspace = true
+serde.workspace = true
+taskmgr.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+
+[lints]
+workspace = true
